@@ -4,4 +4,4 @@
 *.vcxproj.user
 
 main.cpp
-test.*
+test*

@@ -19,10 +19,15 @@ public:
     std::vector<std::string> header;
     char delim=',';
 
-    void read(std::ifstream& file)
+    void read(std::ifstream& file, bool withHeader=false)
     {
         std::string line;
-        size_t t = sizeof...(T);
+        if (withHeader)
+        {
+            std::getline(file, line);
+            header = split(line, delim);
+        }
+
         while (std::getline(file, line))
         {
             auto sub = split(line, delim);
@@ -36,9 +41,19 @@ public:
 
     void write(std::ofstream& file)
     {
+        // write header
         if (header.size() != 0)
         {
-            
+            file << header[0];
+            for (int i = 1; i != header.size(); i++)
+                file << delim << header[1];
+            file << std::endl;
+        }
+
+        // write elements
+        for (auto& elem : data)
+        {
+            write_elements(file, elem);
         }
     }
 
@@ -56,9 +71,31 @@ private:
         return value;
     }
 
-    template< >
+    template<>
     std::string read_element<std::string>(const std::string& val)
     {
         return val;
+    }
+
+    void write_elements(std::ofstream& file, std::tuple<T...>& elements)
+    {
+        write_element<0>(file, elements);
+    }
+
+    template <size_t N>
+    void write_element(std::ofstream& file, std::tuple<T...>& elements)
+    {
+        file << std::get<N>(elements);
+        if (N != std::tuple_size<std::tuple<T...>>::value - 1)
+        {
+            file << delim;
+            write_element<N + 1>(file, elements);
+        }
+    }
+
+    template <>
+    void write_element<std::tuple_size<std::tuple<T...>>::value - 1>(std::ofstream& file, std::tuple<T...>& elements)
+    {
+        file << std::get<std::tuple_size<std::tuple<T...>>::value - 1>(elements) << std::endl;
     }
 };
